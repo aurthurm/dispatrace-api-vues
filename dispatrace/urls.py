@@ -18,6 +18,7 @@ from django.urls import path, re_path
 from .views import IndexView, bad_request
 from django.conf.urls import handler404
 from django.conf import settings
+from django.conf.urls.static import static
 handler404 = bad_request
 
 
