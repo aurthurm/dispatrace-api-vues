@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  backend:
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    expose:
+      - '8000'
+    ports:
+      - "8000:8000"
+    env_file: django.env
+    links:
+      - postgres
+    depends_on:
+      - postgres
+    command: python manage.py runserver 0.0.0.0:8000
+  postgres:
+    image: postgres
+    restart: always
+    # build:
+    #   context: ./postgres
+    #   dockerfile: Dockerfile
+    # env_file: ./postgres/postgres.env
+    # ports:
+    #   - "5432"
