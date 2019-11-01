@@ -1,0 +1,273 @@
+from rest_framework import generics, mixins
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from django.db.models import Q, F
+from django.utils import timezone
+
+from apps.memos.models import Memo, PUBLIC, PRIVATE, V_URGENT, MODERATE, NORMAL
+from .serialisers import *
+from api.utils import get_ref_number
+
+
+class MemoListCreateAPIView(generics.ListCreateAPIView):
+    serializer_class = MemoSerializer
+
+    def get_queryset(self):
+        queryset = Memo.objects.all()
+        look_up_value, memo_state = self.request.GET.get('q', None), self.request.GET.get('mstate', None)
+        if look_up_value is not None:
+            queryset = queryset.filter(
+						Q(reference_number__icontains=look_up_value) | 
+						Q(subject__icontains=look_up_value) |
+						Q(message__icontains=look_up_value)
+                        )
+        elif memo_state is not None:
+            request_user_id = 1
+            request_user = get_object_or_404(User, pk=request_user_id)
+            request_user_username = request_user.username
+            print(f"Initial search: {len(queryset)}")
+            if memo_state == 'closed':
+                """
+                Display a Archived memos where request user is either adressed to or cc.
+                Why see memos that didnt concern you from inception :)
+                """
+                queryset = queryset.filter(
+                        Q(is_open__exact=False) & Q(archived__exact=False),
+                        Q(sender__exact=request_user) #Q(to__exact=self.request.user) | Q(recipients__username__contains=self.request.user.username)
+                    ).distinct()
+                print(f"After filter closed: {len(queryset)}")
+            elif memo_state == 'archived':
+                """
+                Display a Archived memos where request user is either adressed to or cc.
+                Why see memos that didnt concern you from inception :)
+                """
+                queryset = queryset.filter(
+                        Q(archived__exact=True),
+                        Q(sender__exact=request_user) #Q(to__exact=self.request.user) | Q(recipients__username__contains=self.request.user.username)
+                    ).distinct()
+                print(f"After filter archived: {len(queryset)}")
+            elif memo_state == 'outgoing':
+                """
+                Display a Memo List defined by:
+                1. Memos i created and still being reviewed by others but not archived yet.
+                2. Memos i received and has already commented but still awaits commenting by next user.
+                """
+                queryset = queryset.filter(Q(archived__exact=False))
+                queryset = queryset.filter(
+                        Q(sender__exact=request_user) & Q(sent__exact=True) & Q(is_open__exact=True) |
+                        Q(sent__exact=True) & Q(is_open__exact=True) & Q(recipients__username__contains=request_user_username) & Q(memocomment_comment__commenter__exact=request_user) | # 
+                        Q(is_open__exact=True) & Q(receptors__username__contains=request_user_username) 
+                    ).distinct()
+                print(f"After filter outgoing: {len(queryset)}")
+            elif memo_state == 'drafts':
+                """
+                Display a Memo List defined by:
+                1. Memos i create but havent sent them yet.
+                """
+                queryset = queryset.filter(
+                        Q(sent__exact=False) & Q(is_open__exact=True) & Q(sender__exact=request_user)
+                    ).distinct()
+                print(f"After filter drafts: {len(queryset)}")
+            elif memo_state == 'incoming':	
+                """
+                Display a Memo List defined by:
+                1. Memos i received but awaiting my commenting.
+                2. If memo.to let memo remain in intray before close even after comenting
+                """
+                queryset = queryset.filter(
+                        Q(sent__exact=True) & Q(is_open__exact=True) & ~Q(sender__exact=request_user), # ... and exclude those i created myself
+                        Q(recipients__username__contains=request_user_username) & ~Q(memocomment_comment__commenter__exact=request_user) | #   if am recient exclude those i commented
+                        Q(to__exact=request_user) 
+                        # & Q(memocomment_comment__commenter__exact=self.request.user) , # where i am adresses to and include those i commented
+                    ).distinct()
+                queryset = queryset.filter(
+                        ~Q(receptors__username__contains=request_user_username)
+                    )                    
+                print(f"After filter incoming: {len(queryset)}")
+            else:
+                pass
+        else: # there are no look_ups or memo_state queries
+            queryset = queryset.filter(sent__exact=True, archived__exact=False)
+            print(f"Memo List: {len(queryset)}")
+
+        return queryset
+
+    def create(self, *args, **kwargs):   
+        request_user_id = 1
+        request_user = get_object_or_404(User, pk=request_user_id)
+        new_data = self.request.data.get('form_data')
+        recipients = []
+        for user_name in new_data.get('recipients', []).split(','): 
+            user_name = user_name.strip()
+            if len(user_name) != 0:
+                recipients.append(get_object_or_404(User, username__exact=user_name.strip()))
+        accesibility = new_data.get('accesibility', None)
+        if accesibility == "Private":
+            accesibility = PRIVATE
+        else:
+            accesibility = PUBLIC
+        priority = new_data.get('priority', None)
+        if priority == "Normal":
+            priority = NORMAL
+        elif priority == "Moderate":
+            priority = MODERATE
+        else:
+            priority = V_URGENT
+        commenting = new_data.get('commenting', True)
+        if commenting == "Required":
+            commenting = True
+        else:
+            commenting = False
+        new_memo = Memo.objects.create(
+            sender = request_user,
+            to = get_object_or_404(User, username__exact=new_data.get('to', None)),
+            is_open = True,
+            archived = False,
+            created = timezone.now(),
+            reference_number = get_ref_number(user=request_user),
+            subject = new_data.get('subject', None),
+            message = new_data.get('content', None),
+            accesibility = accesibility,
+            mem_priority = priority,
+            commenting_required = commenting,
+        )        
+        new_memo.recipients.set(recipients)
+        new_memo.save()
+        serializer = MemoSerializer(new_memo) 
+        
+        return Response({'data': serializer.data})
+
+    # def perform_create(self, serializer):
+    #     request_user_id = 1
+    #     request_user = get_object_or_404(User, pk=request_user_id)
+    #     return serializer.save(
+    #         sender = request_user
+    #     )
+
+
+class MemoRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
+    queryset = Memo.objects.all()
+    serializer_class = MemoSerializer
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        update = request.data.get('memo_form')
+        # Retrieve New Data
+        to = get_object_or_404(User, username=update.get('to', None))
+        recipients = []
+        for user_name in update.get('recipients', []).split(','): 
+            user_name = user_name.strip()
+            if len(user_name) != 0:
+                print(f"Username: {user_name}, {len(user_name)}")
+                recipients.append(get_object_or_404(User, username__exact=user_name.strip()))
+        subject = update.get('subject', None)
+        message = update.get('content', None)
+        accesibility = update.get('accesibility', None)
+        if accesibility == "Private":
+            accesibility = PRIVATE
+        else:
+            accesibility = PUBLIC
+        priority = update.get('priority', None)
+        if priority == "Normal":
+            priority = NORMAL
+        elif priority == "Moderate":
+            priority = MODERATE
+        else:
+            priority = V_URGENT
+        commenting = update.get('commenting', True)
+        if commenting == "Required":
+            commenting = True
+        else:
+            commenting = False
+        instance.to = to
+        instance.recipients.set(recipients)
+        instance.subject = subject
+        instance.message = message
+        instance.accesibility = accesibility
+        instance.commenting_required = commenting
+        instance.mem_priority = priority
+        instance.save()
+        serializer = MemoSerializer(instance)        
+
+        return Response({'data': serializer.data})
+        
+
+class MemoCreateAPIView(generics.CreateAPIView):
+    queryset = Memo.objects.all()
+    serializer_class = MemoSerializer
+
+    def create(self, *args, **kwargs):
+        request_user_id = 1
+        request_user = get_object_or_404(User, pk=request_user_id)
+        new_data = self.request.data.get('form_data')
+        recipients = []
+        for user_name in new_data.get('recipients', []).split(','): 
+            user_name = user_name.strip()
+            if len(user_name) != 0:
+                recipients.append(get_object_or_404(User, username__exact=user_name.strip()))
+        accesibility = new_data.get('accesibility', None)
+        if accesibility == "Private":
+            accesibility = PRIVATE
+        else:
+            accesibility = PUBLIC
+        priority = new_data.get('priority', None)
+        if priority == "Normal":
+            priority = NORMAL
+        elif priority == "Moderate":
+            priority = MODERATE
+        else:
+            priority = V_URGENT
+        commenting = new_data.get('commenting', True)
+        if commenting == "Required":
+            commenting = True
+        else:
+            commenting = False
+        new_memo = Memo.objects.create(
+            sender = request_user,
+            to = get_object_or_404(User, username__exact=new_data.get('to', None)),
+            is_open = True,
+            archived = False,
+            created = timezone.now(),
+            reference_number = get_ref_number(user=request_user),
+            subject = new_data.get('subject', None),
+            message = new_data.get('content', None),
+            accesibility = accesibility,
+            mem_priority = priority,
+            commenting_required = commenting,
+        )        
+        new_memo.recipients.set(recipients)
+        new_memo.save()
+        serializer = MemoSerializer(new_memo) 
+        
+        return Response({'data': serializer.data})
+
+class CommentCreateUpdateAPIView(mixins.UpdateModelMixin, generics.CreateAPIView):
+    serializer_class = MemoCommentSerializer
+
+    def post(self, request, *args, **kwargs):
+        request_user = get_object_or_404(User, pk=1)
+        request_data = self.request.data
+        memo = get_object_or_404(Memo, pk=int(request_data.get('memo_id')))
+        comment_text = request_data.get('comment')
+        if memo and comment_text:
+            comment = MemoComment.objects.create(
+                memo = memo,
+                comment = comment_text,
+                timestamp = timezone.now(),
+                commenter = request_user
+            )
+            comment.save()
+        serializer = MemoSerializer(memo)
+        return Response(serializer.data) 
+
+    def put(self, request, *args, **kwargs):
+        request_data = self.request.data
+        memo = get_object_or_404(Memo, pk=int(request_data.get('memo_id')))
+        comment = get_object_or_404(MemoComment, pk=int(request_data.get('comment_id')))
+        comment_text = request_data.get('comment')
+        if comment and comment_text:
+            comment.comment = comment_text
+            comment.comment = comment_text
+            comment.save()
+        serializer = MemoSerializer(memo)
+        return Response(serializer.data) 

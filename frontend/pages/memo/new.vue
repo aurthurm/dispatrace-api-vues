@@ -36,7 +36,15 @@ import Create from '~/components/memo/Create'
     methods: {
       onSubmit(evt) {
         evt.preventDefault()
-        return this.$router.push({ path: '/memo/1'})
+        this.$axios.$post('/memos/', { form_data:this.form }, { headers: this.$store.getters['authHeader'] })
+        .then(res => {
+          console.log(res)
+          this.$router.push({ path: '/memo/' + res.data.id})
+        })
+        .catch(err => {
+          console.log(err)
+        })
+        // return this.$router.push({ path: '/memo/1'})
         // console.log("This form", JSON.stringify(this.form))
       },
       onReset(evt) {

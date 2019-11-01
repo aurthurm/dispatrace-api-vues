@@ -82,6 +82,7 @@ import MainNavigation from '~/components/layouts/MainNavigation.vue'
 import LeftSideNavigation from '~/components/layouts/LeftSideNavigation.vue'
 
 export default {
+  middleware: ['force-auth'],
   components: {
     MainNavigation,
     LeftSideNavigation

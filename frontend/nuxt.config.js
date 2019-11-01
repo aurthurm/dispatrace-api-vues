@@ -15,8 +15,7 @@ export default {
       }
     ],
     link: [
-      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-      { src: 'https://cdn.jsdelivr.net/npm/jquery@3.3', type: "text/javascript"}
+      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
     ]
   },
   /*
@@ -33,9 +32,10 @@ export default {
    ** Plugins to load before mounting the App
    */
   plugins: [  
-    '~plugins/jquery-plug.js',
-    '~plugins/trumbowyg.js',
-    '~plugins/fontawesome.js',
+    '~/plugins/jquery-plug.js',
+    '~/plugins/trumbowyg.js',
+    '~/plugins/fontawesome.js',
+    '~/plugins/date-filter.js'
   ],
   /*
    ** Nuxt.js dev-modules
@@ -51,13 +51,38 @@ export default {
     // Doc: https://bootstrap-vue.js.org
     'bootstrap-vue/nuxt',
     // Doc: https://axios.nuxtjs.org/usage
-    '@nuxtjs/axios'
+    '@nuxtjs/axios',
+    // Do: https://auth.nuxtjs.org/guide/
+    // '@nuxtjs/auth'
   ],
+  /*
+   ** Nuxt Auth module configuration
+   ** See https://axios.nuxtjs.org/usage
+   */
+  // auth: {
+  //   strategies: {
+  //     local: {
+  //       endpoints: {
+  //         login: { url: 'token/', method: 'post', propertyName: 'access'  },
+  //         logout: { url: 'token', method: 'post' },
+  //         user: false
+  //       }
+  //     }
+  //   },
+  //   redirect: {
+  //     login: '/auth',
+  //     logout: '/auth',
+  //     callback: false,
+  //     home: '/'
+  //   }
+  // },
   /*
    ** Axios module configuration
    ** See https://axios.nuxtjs.org/options
    */
-  axios: {},
+  axios: {
+    baseURL: 'http://localhost:8000/api'
+  },
   /*
    ** Build configuration
    */
@@ -66,5 +91,11 @@ export default {
      ** You can extend webpack config here
      */
     extend(config, ctx) {}
+  },
+  /*
+   ** Router configuration
+   */
+  router: {
+    middleware: ['persist-auth']
   }
 }

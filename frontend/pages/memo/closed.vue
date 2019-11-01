@@ -4,11 +4,12 @@
         <hr>
         <search-result 
             v-for="result in results" :key="result.created"
-            :creator="result.creator"
+            :creator="result.sender.get_full_name"
             :subject="result.subject"
-            :brief="result.brief"
+            :brief="result.message"
             :created="result.created"
-            :status="result.status"/>
+            :id="result.id"
+            status="Closed"/>
     </div>
 </template>
 
@@ -16,25 +17,26 @@
 import SearchResult from '~/components/memo/SearchResult';
 
 export default {
+    props: {
+        truncate: Function,
+    },
     data() {
         return {
-            results: [
-                {
-                    creator: "Aurthur Musendame",
-                    subject: "Data Analystics",
-                    brief: "Lets be warry about the importance of data",
-                    created: "Jan 15 2018",
-                    status: "closed"
-                },
-                {
-                    creator: "Paul Chingongo",
-                    subject: "Visit to Mars 2",
-                    brief: "I had a wonderful and awesome spaceship flight to mars",
-                    created: "Oct 01 2019",
-                    status: "closed"
-                }
-            ]
+            results: []
         }
+    },
+    mounted () {
+        this.$axios.$get('/memos/?mstate=closed', { headers: this.$store.getters['authHeader'] })
+        .then(res => {
+            this.results = res
+            this.results.forEach(result => { 
+                result.message = this.truncate(result.message, 6)                
+            });
+            console.log('fetched closed memos', res)
+        })
+        .catch(err => {
+            console.log(err)
+        })        
     },
   components: {
       SearchResult

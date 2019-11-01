@@ -1,7 +1,7 @@
 <template>
 <div>
-  <b-navbar toggleable="lg" type="dark" variant="info">
-    <b-navbar-brand href="#">NavBar</b-navbar-brand>
+  <b-navbar toggleable="lg" type="dark" variant="dark">
+    <nuxt-link to="/" class="navbar-brand" tag="a">Smart Works</nuxt-link>
 
     <b-navbar-toggle target="nav-collapse"></b-navbar-toggle>
 
@@ -24,10 +24,11 @@
         <b-nav-item-dropdown right>
           <!-- Using 'button-content' slot -->
           <template v-slot:button-content>
-            <em>User</em>
+            <em>Accounts</em>
           </template>
-          <b-dropdown-item href="#">Profile</b-dropdown-item>
-          <b-dropdown-item href="#">Sign Out</b-dropdown-item>
+          <nuxt-link to="/admin/accounts/1" class="dropdown-item" role="menuitem" target="_self" tag="a" >My Profile</nuxt-link>
+          <nuxt-link to="/admin/accounts/" class="dropdown-item" role="menuitem" target="_self" tag="a" >Users</nuxt-link>
+          <b-dropdown-item href="#" @click.stop.prevent="logOut">Sign Out</b-dropdown-item>
         </b-nav-item-dropdown>
       </b-navbar-nav>
     </b-collapse>
@@ -44,6 +45,7 @@
 </style>
 
 <script>
+import { mapActions } from 'vuex';
 export default {
   methods: {
     adjustNavBar() {
@@ -58,6 +60,9 @@ export default {
       var navheight = navbar.clientHeight + 5;
       var contentWindow = document.querySelector("main");
       contentWindow.style.paddingTop = navheight + "px";
+    },
+    logOut() {
+        this.$store.dispatch('logOut')
     }
   },
   mounted() {

@@ -8,7 +8,7 @@
                 </button>                
             </h3>
             <b-nav-form v-if="showMemoSubs">
-                <b-form-input size="sm" class="mr-sm-2" placeholder="Search"></b-form-input>
+                <b-form-input size="sm" class="mr-sm-2" v-model="searchQuery" placeholder="Search"></b-form-input>
                 <b-button size="sm" class="my-2 my-sm-0" type="submit" @click.prevent="memoSearch">Search</b-button>
             </b-nav-form>
         </div>
@@ -26,18 +26,19 @@
         </section>
         <hr>
         <section id="dynamic-wrapper" v-if="!searched">
-            <nuxt-child/>
+            <nuxt-child :truncate="truncate"/>
         </section> 
         <section id="search-results" v-else>
             <h4>Search Results ...</h4>
             <hr>
             <search-result 
                 v-for="result in results" :key="result.created"
-                :creator="result.creator"
+                :creator="result.sender.get_full_name"
                 :subject="result.subject"
-                :brief="result.brief"
+                :brief="result.message"
                 :created="result.created"
-                :status="result.status"/>
+                :id="result.id"
+                status="Incoming"/>
         </section> 
     </div>
 </template>
@@ -48,6 +49,10 @@ import SearchResult from '~/components/memo/SearchResult';
 export default {
     data() {
         return {
+            searched: false,
+            results: [],
+            searchQuery: '',
+            showMemoSubs: false,
             memoStates: [
                 {
                     title: "INCOMING",
@@ -79,32 +84,27 @@ export default {
                     link: "/archived",
                     count: 65
                 },
-            ],            
-            searched: false,
-            results: [],
-            showMemoSubs: false
+            ]          
         }
     },
     methods: {
+        truncate(str, numberOfWords) {
+            return str.replace(/(<([^>]+)>)/ig,"").split(/\s+/).slice(0, numberOfWords).join(" ") + " ...";
+        },
         memoSearch: function() {
             this.searched = true;
-            this.results =  [
-                {
-                    creator: "Aurthur Musendame",
-                    subject: "Data Analystics",
-                    brief: "Lets be warry about the importance of data",
-                    created: "Jan 15 2018",
-                    status: "closed"
-                },
-                {
-                    creator: "Paul Chingongo",
-                    subject: "Visit to Mars 2",
-                    brief: "I had a wonderful and awesome spaceship flight to mars",
-                    created: "Oct 01 2019",
-                    status: "archived"
-                }
-            ]
-            console.log(this.results, this.searched);
+            console.log("Query", this.searchQuery)
+            this.$axios.$get('/memos/?q=' + this.searchQuery, { headers: this.$store.getters['authHeader'] })
+            .then(res => {
+                this.results = res
+                this.results.forEach(result => { 
+                    result.message = this.truncate(result.message, 6)                
+                });
+                console.log('searched memos', res)
+            })
+            .catch(err => {
+                console.log(err)
+            })    
         },
         toggleMemoSubs: function() {
             this.showMemoSubs = !this.showMemoSubs

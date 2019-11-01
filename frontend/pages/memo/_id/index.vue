@@ -6,51 +6,50 @@
                 <b-col cols="2">FROM:</b-col>
                 <b-col class="d-flex justify-content-between">
                     <span>
-                        Aurthur Musedame
+                        {{memo.sender.get_full_name || memo.sender.username}}
                     </span>
                     <span>
-                        TO: Paul Chingongo
+                        TO: {{memo.to.get_full_name || memo.to.username}}
                     </span>
                     <span>
-                        28 Jul 2018
+                        {{memo.date_sent}}
                     </span>
                 </b-col>
             </b-row>
             <b-row>
                 <b-col cols="2">RECIPIENTS:</b-col>
-                <b-col>Andriatah, Brian, Peter, Samson, ...</b-col>
+                <b-col>
+                    <span class="mr-2" v-for="recipient in memo.recipients" :key="recipient.id">@{{recipient.username}} </span>
+                </b-col>
             </b-row>
             <b-row>
                 <b-col cols="2">SUBJECT:</b-col>
-                <b-col class="font-weight-bold text-uppercase">Lorem ipsum dolor, sit amet consectetur adipisicing elit.</b-col>
+                <b-col class="font-weight-bold text-uppercase">{{memo.subject}}</b-col>
             </b-row>
             <b-row>
                 <b-col cols="2">REFERENCE:</b-col>
-                <b-col class="font-italic font-weight-light">M-23748683HHUEHJJJ</b-col>
+                <b-col class="font-italic font-weight-light">{{memo.reference_number}}</b-col>
             </b-row>
             <b-row>
                 <b-col class="bg-dark mx-0 my-2 p-1" cols="12"><h5 class="h5 ml-2 mb-0 text-white">BODY:</h5></b-col>                
                 <b-col class="" cols="12">
-                    <b-card-text>
-                        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Architecto recusandae, quam magnam exercitationem provident velit nulla ab cum, iure debitis in nostrum veritatis molestiae qui labore consequuntur inventore sed tempore.
-                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Nemo nostrum aspernatur delectus. Molestiae dolor maiores non laboriosam minus. Id, qui! Aperiam voluptate pariatur laborum in, culpa minima cupiditate autem earum.
-                        </p>
-                        <p>Lorem, ipsum dolor sit amet consectetur adipisicing elit. Rerum magnam possimus at odio omnis quas similique inventore voluptatem sequi. Rerum voluptas odit sit sunt, vitae ad eveniet nesciunt explicabo quisquam.</p>
-                        <p>Lorem ipsum, dolor sit amet consectetur adipisicing elit. Nobis, nostrum tempore? Odit unde amet ratione, animi placeat exercitationem repellat labore nihil, quis, in porro! Quo voluptates qui quae sapiente nemo?
-                        Lorem ipsum dolor sit, amet consectetur adipisicing elit. Aut nisi, cumque dolores inventore iste iusto perferendis numquam itaque adipisci accusantium cum tenetur similique laboriosam officiis eligendi officia corporis ab incidunt?
-                        Lorem, ipsum dolor sit amet consectetur adipisicing elit. Sed dolores asperiores eaque laudantium rem aut dicta ex et adipisci fugiat ratione maxime corporis corrupti esse deserunt vero dolorum, dolor quibusdam!</p>
-
+                    <b-card-text v-html="memo.message">
                     </b-card-text>
                 </b-col>
             </b-row>
             <b-row >
-                <b-col class="bg-dark mx-0 my-2 p-1" cols="12"><h5 class="h5 ml-2 mb-0 text-white">COMMENTS:</h5></b-col>  
+                <b-col class="bg-dark mx-0 my-2 p-1" cols="12">
+                    <h5 class="h5 ml-2 mb-0 text-white">
+                        COMMENTS: {{memo.comment_count}} 
+                        <b-button id="show-btn" @click="showModal" class="float-right btn-sm" data-comment='new'>New Comment</b-button> 
+                    </h5>
+                </b-col>  
                 <ul class="list-unstyled mt-2 mb-0">
-                    <b-media tag="li" class="mb-4" v-for="comment in comments" :key="comment.index">
+                    <b-media tag="li" class="mb-4" v-for="comment in memo.memocomment_comment" :key="comment.id">
                         <template v-slot:aside>
                             <b-img blank blank-color="#abc" width="50" alt="placeholder" class="rounded-circle"></b-img>
                         </template>
-                        <h5 class="mt-0 mb-1 font-weight-light">{{ comment.commentor }} | {{ comment.commented }}</h5>
+                        <h5 class="h6 mt-0 mb-1 font-weight-light">{{ comment.commenter.get_full_name }} | {{ comment.timestamp | date }} <span class="ml-5 text-small" data-comment='old' :data-comment-id="comment.id" :data-comment-text="comment.comment"  @click="showModal">Edit</span> </h5>
                         <p class="mb-0">
                             {{ comment.comment }}
                         </p>
@@ -58,36 +57,103 @@
                 </ul>
             </b-row>
         </b-card>
+        <b-modal 
+        ref="modal" 
+        title="Comment"
+        size="lg"
+        @ok="handleOk"
+        centered
+        >
+            <b-form ref="form" @submit.stop.prevent="handleSubmit">
+                <b-row>
+                    <b-col>
+                        <b-form-group
+                        id="fieldset-horizontal"
+                        :state="nameState"
+                        label-cols-sm="3"
+                        label-cols-lg="2"
+                        label-size="sm"
+                        description="Comment"
+                        label="Comment"
+                        label-for="comment"
+                        invalid-feedback="comment is required"
+                        >
+                            <b-form-textarea 
+                            id="comment"
+                            v-model="form.comment"
+                            :state="nameState"
+                            required
+                            ></b-form-textarea>
+                        </b-form-group>
+                    </b-col>                
+                </b-row>
+                <slot></slot>
+            </b-form>
+        </b-modal>
     </article>
 </template>
 
 <script>
 export default {
+    props: {
+        memo: Object
+    },
     data() {
         return {
-            comments: [
-                {
-                    commentor: "Aurthur Musendame",
-                    comment: "Cras sit amet nibh libero, in gravida nulla. Nulla vel metus scelerisque ante sollicitudin.",
-                    commented: "May 7, 2019, 1:53 p.m."
-                },
-                {
-                    commentor: "Bravo Stulo",
-                    comment: "Cras sit amet nibh libero, in gravida nulla",
-                    commented: "May 7, 2019, 1:53 p.m."
-                },
-                {
-                    commentor: "Cardinal Ndowu",
-                    comment: "Nulla vel metus scelerisque ante sollicitudin, in gravida nulla.",
-                    commented: "May 7, 2019, 1:53 p.m."
-                }
-            ]
+            form: {
+                comment: null,
+                new: null,
+                id: null
+            },
+            nameState: null
         }
     },
     methods: {
         editMemo() {
-            return this.$router.push({ path: '/memo/1/edit'})
+            return this.$router.push({ path: '/memo/' + this.$route.params.id + '/edit' })
+        },
+        checkFormValidity(){
+            const valid = this.$refs.form.checkValidity()
+            this.nameState = valid ? 'valid' : 'invalid'
+            return valid
+        },
+        showModal(event) {
+            this.$refs['modal'].show()
+            let dataComment = event.target.attributes['data-comment'].value
+            this.form.new = dataComment
+            if(dataComment === "old")
+            {                
+                this.form.id = event.target.attributes['data-comment-id'].value
+                this.form.comment = event.target.attributes['data-comment-text'].value
+            }
+            else {                
+                this.form.id = null
+                this.form.comment = null
+            }
+        },
+        handleOk(bvModalEvt){
+            bvModalEvt.preventDefault();
+            this.handleSubmit()            
+        },
+        handleSubmit(){
+            let axiosMethod = this.form.new === "new" ? this.$axios.$post : this.$axios.$put
+            axiosMethod('memos/comments/', {
+                new: this.form.new,
+                comment: this.form.comment,
+                memo_id: this.$route.params.id,
+                comment_id: this.form.id
+            })
+            .then(res => {
+                this.$nextTick(() => {
+                    this.$refs.modal.hide()
+                })
+                // window.location.reload()
+                this.$router.push({ path: '/memo/' + this.$route.params.id + '/' })
+            })
+            .catch(err => {
+                console.log(err)
+            })
         }
-    },
+    }
 }
 </script>

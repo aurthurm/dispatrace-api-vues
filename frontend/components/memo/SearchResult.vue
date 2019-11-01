@@ -1,5 +1,5 @@
 <template>
-    <nuxt-link to="/memo/1" tag="a">     
+    <nuxt-link :to="'/memo/' + id + ''" tag="a">     
         <div class="result row">
             <div class="col-2 font-weight-bold">
                 {{ creator }}
@@ -26,7 +26,8 @@ export default {
         subject: String,
         brief: String,
         created: String,
-        status: String
+        status: String,
+        id: Number,
     }
 }
 </script>
