@@ -7,6 +7,7 @@ from django.utils import timezone
 from apps.memos.models import Memo, PUBLIC, PRIVATE, V_URGENT, MODERATE, NORMAL
 from .serialisers import *
 from api.utils import get_ref_number
+from .permissions import *
 
 
 class MemoListCreateAPIView(generics.ListCreateAPIView):
@@ -22,10 +23,9 @@ class MemoListCreateAPIView(generics.ListCreateAPIView):
 						Q(message__icontains=look_up_value)
                         )
         elif memo_state is not None:
-            request_user_id = 1
-            request_user = get_object_or_404(User, pk=request_user_id)
+            request_user_id = self.request.user.id
+            request_user = self.request.user
             request_user_username = request_user.username
-            print(f"Initial search: {len(queryset)}")
             if memo_state == 'closed':
                 """
                 Display a Archived memos where request user is either adressed to or cc.
@@ -33,9 +33,8 @@ class MemoListCreateAPIView(generics.ListCreateAPIView):
                 """
                 queryset = queryset.filter(
                         Q(is_open__exact=False) & Q(archived__exact=False),
-                        Q(sender__exact=request_user) #Q(to__exact=self.request.user) | Q(recipients__username__contains=self.request.user.username)
+                        Q(sender__exact=request_user) | Q(to__exact=self.request.user) | Q(recipients__username__contains=self.request.user.username)
                     ).distinct()
-                print(f"After filter closed: {len(queryset)}")
             elif memo_state == 'archived':
                 """
                 Display a Archived memos where request user is either adressed to or cc.
@@ -45,7 +44,6 @@ class MemoListCreateAPIView(generics.ListCreateAPIView):
                         Q(archived__exact=True),
                         Q(sender__exact=request_user) #Q(to__exact=self.request.user) | Q(recipients__username__contains=self.request.user.username)
                     ).distinct()
-                print(f"After filter archived: {len(queryset)}")
             elif memo_state == 'outgoing':
                 """
                 Display a Memo List defined by:
@@ -55,10 +53,9 @@ class MemoListCreateAPIView(generics.ListCreateAPIView):
                 queryset = queryset.filter(Q(archived__exact=False))
                 queryset = queryset.filter(
                         Q(sender__exact=request_user) & Q(sent__exact=True) & Q(is_open__exact=True) |
-                        Q(sent__exact=True) & Q(is_open__exact=True) & Q(recipients__username__contains=request_user_username) & Q(memocomment_comment__commenter__exact=request_user) | # 
+                        Q(sent__exact=True) & Q(is_open__exact=True) & Q(recipients__username__contains=request_user_username) & Q(memocomment_comment__commenter__exact=request_user) | 
                         Q(is_open__exact=True) & Q(receptors__username__contains=request_user_username) 
                     ).distinct()
-                print(f"After filter outgoing: {len(queryset)}")
             elif memo_state == 'drafts':
                 """
                 Display a Memo List defined by:
@@ -67,7 +64,6 @@ class MemoListCreateAPIView(generics.ListCreateAPIView):
                 queryset = queryset.filter(
                         Q(sent__exact=False) & Q(is_open__exact=True) & Q(sender__exact=request_user)
                     ).distinct()
-                print(f"After filter drafts: {len(queryset)}")
             elif memo_state == 'incoming':	
                 """
                 Display a Memo List defined by:
@@ -78,23 +74,19 @@ class MemoListCreateAPIView(generics.ListCreateAPIView):
                         Q(sent__exact=True) & Q(is_open__exact=True) & ~Q(sender__exact=request_user), # ... and exclude those i created myself
                         Q(recipients__username__contains=request_user_username) & ~Q(memocomment_comment__commenter__exact=request_user) | #   if am recient exclude those i commented
                         Q(to__exact=request_user) 
-                        # & Q(memocomment_comment__commenter__exact=self.request.user) , # where i am adresses to and include those i commented
                     ).distinct()
                 queryset = queryset.filter(
                         ~Q(receptors__username__contains=request_user_username)
                     )                    
-                print(f"After filter incoming: {len(queryset)}")
             else:
                 pass
         else: # there are no look_ups or memo_state queries
             queryset = queryset.filter(sent__exact=True, archived__exact=False)
-            print(f"Memo List: {len(queryset)}")
-
         return queryset
 
     def create(self, *args, **kwargs):   
-        request_user_id = 1
-        request_user = get_object_or_404(User, pk=request_user_id)
+        request_user_id = self.request.user.id
+        request_user = self.request.user
         new_data = self.request.data.get('form_data')
         recipients = []
         for user_name in new_data.get('recipients', []).split(','): 
@@ -136,57 +128,85 @@ class MemoListCreateAPIView(generics.ListCreateAPIView):
         serializer = MemoSerializer(new_memo) 
         
         return Response({'data': serializer.data})
-
-    # def perform_create(self, serializer):
-    #     request_user_id = 1
-    #     request_user = get_object_or_404(User, pk=request_user_id)
-    #     return serializer.save(
-    #         sender = request_user
-    #     )
-
+        
 
 class MemoRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
     queryset = Memo.objects.all()
     serializer_class = MemoSerializer
 
+    def get(self, request, *args, **kwargs):
+        memo_id = self.kwargs.get('pk', None)
+        memo = get_object_or_404(Memo, pk=memo_id)
+        serializer = MemoSerializer(memo)
+        extra_context = {}
+        if memo.is_open:
+            extra_context['can_comment'] = can_comment(self.request.user, memo)
+            comments = memo.memocomment_comment.all()
+            if comments.count() != 0:
+                can_edit_comm =  is_recent_commenter(self.request.user, memo)
+                can_edit_memo = False
+            else:
+                can_edit_comm = False            
+                can_edit_memo = True
+            extra_context['has_commented'] = has_commented(self.request.user, memo)
+            extra_context['can_edit_comment'] = can_edit_comm
+            extra_context['can_close'] = can_close(self.request.user, memo)
+            extra_context['can_edit_memo'] = can_edit_memo
+        else:
+            extra_context['can_comment'] = False
+            extra_context['can_close'] = False
+            extra_context['can_edit_comment'] = False
+            extra_context['can_edit_memo'] = False
+
+        return Response({'data': serializer.data, 'extras': extra_context })
+
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
-        update = request.data.get('memo_form')
-        # Retrieve New Data
-        to = get_object_or_404(User, username=update.get('to', None))
-        recipients = []
-        for user_name in update.get('recipients', []).split(','): 
-            user_name = user_name.strip()
-            if len(user_name) != 0:
-                print(f"Username: {user_name}, {len(user_name)}")
-                recipients.append(get_object_or_404(User, username__exact=user_name.strip()))
-        subject = update.get('subject', None)
-        message = update.get('content', None)
-        accesibility = update.get('accesibility', None)
-        if accesibility == "Private":
-            accesibility = PRIVATE
+        send_memo = request.data.get('send')
+        close_memo = request.data.get('close')
+        if send_memo:
+            instance.sent = True
+            instance.save()
+        elif close_memo:
+            instance.is_open = False
+            instance.save()
         else:
-            accesibility = PUBLIC
-        priority = update.get('priority', None)
-        if priority == "Normal":
-            priority = NORMAL
-        elif priority == "Moderate":
-            priority = MODERATE
-        else:
-            priority = V_URGENT
-        commenting = update.get('commenting', True)
-        if commenting == "Required":
-            commenting = True
-        else:
-            commenting = False
-        instance.to = to
-        instance.recipients.set(recipients)
-        instance.subject = subject
-        instance.message = message
-        instance.accesibility = accesibility
-        instance.commenting_required = commenting
-        instance.mem_priority = priority
-        instance.save()
+            update = request.data.get('memo_form')
+            # Retrieve New Data
+            to = get_object_or_404(User, username=update.get('to', None))
+            recipients = []
+            for user_name in update.get('recipients', []).split(','): 
+                user_name = user_name.strip()
+                if len(user_name) != 0:
+                    recipients.append(get_object_or_404(User, username__exact=user_name.strip()))
+            subject = update.get('subject', None)
+            message = update.get('content', None)
+            accesibility = update.get('accesibility', None)
+            if accesibility == "Private":
+                accesibility = PRIVATE
+            else:
+                accesibility = PUBLIC
+            priority = update.get('priority', None)
+            if priority == "Normal":
+                priority = NORMAL
+            elif priority == "Moderate":
+                priority = MODERATE
+            else:
+                priority = V_URGENT
+            commenting = update.get('commenting', True)
+            if commenting == "Required":
+                commenting = True
+            else:
+                commenting = False
+            instance.to = to
+            instance.recipients.set(recipients)
+            instance.subject = subject
+            instance.message = message
+            instance.accesibility = accesibility
+            instance.commenting_required = commenting
+            instance.mem_priority = priority
+            instance.save()
+
         serializer = MemoSerializer(instance)        
 
         return Response({'data': serializer.data})
@@ -197,8 +217,8 @@ class MemoCreateAPIView(generics.CreateAPIView):
     serializer_class = MemoSerializer
 
     def create(self, *args, **kwargs):
-        request_user_id = 1
-        request_user = get_object_or_404(User, pk=request_user_id)
+        request_user_id = self.request.user.id
+        request_user = self.request.user
         new_data = self.request.data.get('form_data')
         recipients = []
         for user_name in new_data.get('recipients', []).split(','): 
@@ -245,7 +265,7 @@ class CommentCreateUpdateAPIView(mixins.UpdateModelMixin, generics.CreateAPIView
     serializer_class = MemoCommentSerializer
 
     def post(self, request, *args, **kwargs):
-        request_user = get_object_or_404(User, pk=1)
+        request_user = self.request.user
         request_data = self.request.data
         memo = get_object_or_404(Memo, pk=int(request_data.get('memo_id')))
         comment_text = request_data.get('comment')

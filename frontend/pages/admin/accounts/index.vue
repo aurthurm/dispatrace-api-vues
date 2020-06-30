@@ -1,6 +1,6 @@
 <template>
     <div class="container-fluid">
-      <h4>Registered User Accounts</h4>
+      <h4>Registered User Accounts <b-button size='sm' variant='info' @click="showModal">+ New User</b-button></h4>
         <hr>
         <table class="table">
             <thead>
@@ -40,14 +40,41 @@
             </tbody>
         </table>
 
+        <!-- New User Modal -->
+        <b-modal 
+        ref="addUserModal" 
+        title="Register a New User"
+        size="lg"
+        @ok="handleOk"
+        centered
+        >
+
+            <signup-login 
+            :login="login"
+            :form="form"
+            :authHandle="handleOk"/>
+
+        </b-modal>
+        <!-- /New User Modal -->
+
     </div>
 </template>
 
 <script>
+import SignupLogin from '~/components/auth/signuplogin'
 export default {
     data() {
         return {
             accounts: [],
+            login: false,
+            form: {
+                username: '',
+                password: '',
+                password2: '',
+                firstname: '',
+                lastname: '',
+                email: ''
+            }
         }
     },
     mounted() {
@@ -62,16 +89,44 @@ export default {
                 accountData['userFullName'] = account.user.get_full_name
                 accountData['title'] = account.title
                 accountData['force_password_change'] = account.force_password_change
-                accountData['city'] = account.city.name 
-                accountData['department'] = account.department.name
-                accountData['office'] = account.office.name
-                accountData['level'] = account.level.level
+                accountData['city'] = account.city === null ? '--' : account.city.name 
+                accountData['department'] = account.department === null ? '--' : account.department.name
+                accountData['office'] = account.office === null ? '--' : account.office.name
+                accountData['level'] = account.level === null ? '-' : account.level.level
                 this.accounts.push(accountData)   
-             console.log("Got Accounts :", account.index, this.accounts)
              });
-             console.log("Got All accounts", this.accounts)
         })
         .catch( err => console.log(err))
+    },
+    methods: {
+        showModal() {
+            this.resetForm()
+            this.$refs['addUserModal'].show()
+        },
+        handleOk() {
+            this.authHandle()
+        },
+        authHandle() {
+            var data = {}
+            data['username'] = this.form.username
+            data['password'] = this.form.password
+            data['password2'] = this.form.password2                
+            data['firstname'] = this.form.firstname
+            data['lastname'] = this.form.lastname
+            data['email'] = this.form.email
+            this.$store.dispatch('signUp', data)
+        },
+        resetForm() {            
+            this.form.username = ''
+            this.form.password = ''
+            this.form.password2 = ''            
+            this.form.firstname = ''
+            this.form.lastname = ''
+            this.form.email = ''
+        }
+    },
+    components: {
+        SignupLogin
     }
 }
 </script>

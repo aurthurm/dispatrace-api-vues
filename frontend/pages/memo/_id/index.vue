@@ -1,6 +1,17 @@
 <template>
     <article>
-        <button class="btn btn-warning mb-2" @click="editMemo">EDIT</button>
+        <button 
+        v-if="(memo.sender.username === $store.getters.loggedInUser) && memo.is_open && extras.can_edit_memo"
+        class="btn btn-warning mb-2" 
+        @click="editMemo">EDIT</button>
+        <button 
+        v-if="!memo.sent && (memo.sender.username === $store.getters.loggedInUser)"
+        class="btn btn-success mb-2" 
+        @click="sendMemo">SEND</button>
+        <button 
+        v-if="extras.can_close && (memo.to.username === $store.getters.loggedInUser)"
+        class="btn btn-danger mb-2" 
+        @click="closeMemo">CLOSE</button>
         <b-card variant="bg-light" class="memo mb-5">
             <b-row>
                 <b-col cols="2">FROM:</b-col>
@@ -41,7 +52,12 @@
                 <b-col class="bg-dark mx-0 my-2 p-1" cols="12">
                     <h5 class="h5 ml-2 mb-0 text-white">
                         COMMENTS: {{memo.comment_count}} 
-                        <b-button id="show-btn" @click="showModal" class="float-right btn-sm" data-comment='new'>New Comment</b-button> 
+                        <b-button 
+                        v-if="extras.can_comment"
+                        id="show-btn" 
+                        @click="showModal" 
+                        class="float-right btn-sm" 
+                        data-comment='new'>New Comment</b-button> 
                     </h5>
                 </b-col>  
                 <ul class="list-unstyled mt-2 mb-0">
@@ -49,7 +65,15 @@
                         <template v-slot:aside>
                             <b-img blank blank-color="#abc" width="50" alt="placeholder" class="rounded-circle"></b-img>
                         </template>
-                        <h5 class="h6 mt-0 mb-1 font-weight-light">{{ comment.commenter.get_full_name }} | {{ comment.timestamp | date }} <span class="ml-5 text-small" data-comment='old' :data-comment-id="comment.id" :data-comment-text="comment.comment"  @click="showModal">Edit</span> </h5>
+                        <h5 class="h6 mt-0 mb-1 font-weight-light">{{ comment.commenter.get_full_name }} | {{ comment.timestamp | date }}
+                            <span 
+                            v-if="(comment.commenter.username === $store.getters.loggedInUser) && extras.can_edit_comment"
+                            class="ml-5 text-small" 
+                            data-comment='old' 
+                            :data-comment-id="comment.id" 
+                            :data-comment-text="comment.comment"  
+                            @click="showModal">Edit</span> 
+                        </h5>
                         <p class="mb-0">
                             {{ comment.comment }}
                         </p>
@@ -57,6 +81,16 @@
                 </ul>
             </b-row>
         </b-card>
+        <button 
+        v-if="!memo.sent && (memo.sender.username === $store.getters.loggedInUser)"
+        class="btn btn-success mb-2" 
+        @click="sendMemo">SEND</button>
+        <button 
+        v-if="extras.can_close && (memo.to.username === $store.getters.loggedInUser)"
+        class="btn btn-danger mb-2" 
+        @click="closeMemo">CLOSE</button>
+        
+
         <b-modal 
         ref="modal" 
         title="Comment"
@@ -95,9 +129,6 @@
 
 <script>
 export default {
-    props: {
-        memo: Object
-    },
     data() {
         return {
             form: {
@@ -105,8 +136,41 @@ export default {
                 new: null,
                 id: null
             },
-            nameState: null
+            nameState: null,
+            memo: {
+                archived: null,
+                commenting_required: null,
+                created: null,
+                date_sent: null,
+                id: null,
+                is_open: null,
+                mem_priority: null,
+                memo_type: null,
+                message: null,
+                receptors: [],
+                recipients: [],
+                reference_number: null,
+                sender: {},
+                sent: null,
+                slug: null,
+                subject: null,
+                to: {},
+            },
+            extras: {
+                can_comment: false,
+                can_close: false
+            }
         }
+    },
+    mounted () {
+        this.$axios.$get('/memos/' + this.$route.params.id + '/', { headers: this.$store.getters['authHeader'] })
+        .then(res => {
+            this.memo = res.data
+            this.extras = res.extras
+        })
+        .catch(err => {
+            console.log(err)
+        })        
     },
     methods: {
         editMemo() {
@@ -142,13 +206,31 @@ export default {
                 comment: this.form.comment,
                 memo_id: this.$route.params.id,
                 comment_id: this.form.id
-            })
+            }, { headers: this.$store.getters['authHeader'] })
             .then(res => {
                 this.$nextTick(() => {
                     this.$refs.modal.hide()
                 })
-                // window.location.reload()
-                this.$router.push({ path: '/memo/' + this.$route.params.id + '/' })
+                window.location.reload()
+                // this.$router.push({ path: '/memo/' + this.$route.params.id + '/' })
+            })
+            .catch(err => {
+                console.log(err)
+            })
+        },
+        sendMemo() {
+            this.$axios.$put('/memos/' + this.$route.params.id + '/', { send: true }, { headers: this.$store.getters['authHeader'] })
+            .then(res => {
+                window.location.reload()
+            })
+            .catch(err => {
+                console.log(err)
+            })
+        },
+        closeMemo() {
+            this.$axios.$put('/memos/' + this.$route.params.id + '/', { close: true }, { headers: this.$store.getters['authHeader'] })
+            .then(res => {
+                this.$router.push({ path: '/memo/' + res.data.id})
             })
             .catch(err => {
                 console.log(err)

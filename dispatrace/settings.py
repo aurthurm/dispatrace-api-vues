@@ -45,11 +45,13 @@ INSTALLED_APPS = [
     ## 3rd party apps ##
     'corsheaders',
     'rest_framework',
+    'guardian',
 
     ## dispatrace apps ##
     'apps.accounts.apps.AccountsConfig',
     'apps.notices.apps.NoticesConfig',
     'apps.memos.apps.MemosConfig',
+    'apps.setting.apps.SettingConfig',
 
     ## dispatrace api ##
     'api.apps.APIConfig',
@@ -128,6 +130,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Django guardian requires
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend', # default
+    'guardian.backends.ObjectPermissionBackend',
+)
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/

@@ -225,8 +225,9 @@ class MemoComment(AbstractComment):
         related_name='%(class)s_comment', 
         on_delete=models.PROTECT
     )
-
+    
     class Meta:
+        get_latest_by = ['timestamp']
         verbose_name = _('memo comment')
         verbose_name_plural = _('memo comments')
 

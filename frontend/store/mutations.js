@@ -11,12 +11,13 @@ export default {
         state.auth.refresh = null
         state.auth.user = ''
         state.auth.loggedIn = false
+        state. timeLeft = { hours: 0, minutes: 0 }
         localStorage.removeItem('auth'); 
-        console.log("Logging you out")
         return this.$router.push('/auth')
     }, 
 
     setAccounts(state, accounts) {
-        state.accounts = [...state.accounts , ...accounts]
-    }
+        state.accounts = [ ...accounts]
+    },
+
 }

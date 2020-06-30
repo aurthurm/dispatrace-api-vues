@@ -38,23 +38,23 @@
                             </tr>
                             <tr>
                                 <td class="text-dark">Level</td>
-                                <td class="text-dark">{{ account.level.level }}</td>
+                                <td class="text-dark">{{ account.level === null ? "" : account.level.level }}</td>
                             </tr>
                             <tr>
                                 <td class="text-dark">Department</td>
-                                <td class="text-dark">{{ account.department.name }}</td>
+                                <td class="text-dark">{{ account.department === null ? "" : account.department.name }}</td>
                             </tr>
                             <tr>
                                 <td class="text-dark">Office/Branch</td>
-                                <td class="text-dark">{{ account.office.name }}</td>
+                                <td class="text-dark">{{ account.office === null ? "" : account.office.name }}</td>
                             </tr>
                             <tr>
                                 <td class="text-dark">City</td>
-                                <td class="text-dark">{{ account.city.name }}</td>
+                                <td class="text-dark">{{ account.city === null ? "" : account.city.name }}</td>
                             </tr>
                         </tbody>
                     </table>    
-                    <button class="btn btn-outline-danger btn-sm" data-toggle="modal" data-target="#PasswordChangeModal">Reset Password</button>
+                    <button class="btn btn-outline-danger btn-sm"  @click.stop.prevent="showPRModal">Reset Password</button>
                 </div>
             </div>		
             <div class="col-md-8" v-if="editProfile">
@@ -231,6 +231,58 @@
             </div>
         </div>
         <!-- password reset modal -->
+        <b-modal 
+        ref="passwordResetModal" 
+        title="Password Reset"
+        size="lg"
+        @ok="handleOk"
+        centered
+        >
+            <b-form ref="form" @submit.stop.prevent="handleSubmit">
+                <input type="text" id="username" :value="account.user.username" hidden>
+                <b-row>
+                    <b-col>
+                        <b-form-group
+                        id="fieldset-horizontal"
+                        label-cols-sm="3"
+                        label-cols-lg="2"
+                        label-size="sm"
+                        description="New Password"
+                        label="Password"
+                        label-for="password"
+                        invalid-feedback="title is required"
+                        >
+                            <b-form-input 
+                            type="password"
+                            id="password"
+                            v-model="password"
+                            required
+                            ></b-form-input>
+                        </b-form-group>
+                    </b-col>   
+                    <b-col>
+                        <b-form-group
+                        id="fieldset-horizontal"
+                        label-cols-sm="3"
+                        label-cols-lg="2"
+                        label-size="sm"
+                        description="Confirm Password"
+                        label="Confirm"
+                        label-for="password2"
+                        invalid-feedback="title is required"
+                        >
+                            <b-form-input 
+                            type="password"
+                            id="password2"
+                            v-model="password2"
+                            required
+                            ></b-form-input>
+                        </b-form-group>
+                    </b-col>                
+                </b-row>
+                <slot></slot>
+            </b-form>
+        </b-modal>
         <!-- / password reset modal --> 
     </div>
 </template>
@@ -241,6 +293,8 @@ export default {
     data() {
         return {
             editProfile: false,
+            password: '',
+            password2: '',
             account: {
                 user: '',
                 firstname: '',
@@ -294,8 +348,7 @@ export default {
     },
     methods: {
         initUpdate() {
-            this.editProfile = true
-            console.log('initialise cities')   
+            this.editProfile = true  
             this.$axios.$get('accounts/cities/', { headers: this.$store.getters['authHeader'] })
             .then(res => {
                 res.forEach(city => {
@@ -303,15 +356,13 @@ export default {
                 });
             })
             .catch( err => console.log(err))   
-            console.log('initialise levels')   
             this.$axios.$get('accounts/levels/', { headers: this.$store.getters['authHeader'] })
             .then(res => {
                 res.forEach(level => {
                     this.options.levels.options.push({ value: level.id, text: level.level})
                 });
             })
-            .catch( err => console.log(err))     
-            console.log('initialise groups')   
+            .catch( err => console.log(err))   
             this.$axios.$get('accounts/groups/', { headers: this.$store.getters['authHeader'] })
             .then(res => {
                 res.forEach(group => {
@@ -330,7 +381,6 @@ export default {
             this.options.offices.options = [{ value: null, text: "Select an Office"}]
             // initialise departments
             this.options.departments.options = [{ value: null, text: "Select a Department"}]
-            console.log('initialise offices for city', this.account.city)   
             this.$axios.$get('accounts/offices?city=' + this.account.city.id, { headers: this.$store.getters['authHeader'] })
             .then(res => {
                 res.forEach(office => {
@@ -342,7 +392,6 @@ export default {
         onOfficeUpdate() {
             // initialise departments
             this.options.departments.options = [{ value: null, text: "Select a Department"}]
-            console.log('initialise departmnets for office', this.account.office)   
             this.$axios.$get('accounts/departments?office=' + this.account.office.id, { headers: this.$store.getters['authHeader'] })
             .then(res => {
                 // add new options
@@ -353,13 +402,32 @@ export default {
             .catch( err => console.log(err))         
         },
         profileUpdate() { 
-            console.log(this.account)
             this.$axios.$put('accounts/' + this.$route.params.id.split('-')[0] + '/', {  account_data: this.account  }, { headers: this.$store.getters['authHeader']})
             .then(res => {
-                console.log(res)
+                window.location.reload()
             })
             .catch( err => console.log(err))  
             // this.editProfile = false
+        },
+        showPRModal(){
+            this.$refs.passwordResetModal.show()
+        },
+        handleOk(){
+            this.handlePasswordReset()
+        },
+        handlePasswordReset(){
+            let resetData = {}
+            resetData['username'] = this.account.user.username
+            resetData['user_id'] = this.account.user.id
+            resetData['password1'] = this.password
+            resetData['password2'] = this.password2
+            this.$axios.$post('accounts/password-reset/', {  user_data: resetData  }, { headers: this.$store.getters['authHeader']})
+            .then(res => {
+                this.$refs.passwordResetModal.hide()
+            })
+            .catch( err => console.log(err))  
+            
+            
         }
     },
     watch: {

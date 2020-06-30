@@ -4,6 +4,10 @@ export default {
         .then(res => {
           commit('setNotices', res)
         })
-        .catch(err => console.log(err))
+        .catch(err  => {
+          if(err.response.status === 401){
+            return this.$router.push('/auth')
+          }  
+        })  
     },
 }

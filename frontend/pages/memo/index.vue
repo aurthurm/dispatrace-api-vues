@@ -1,47 +1,32 @@
 <template>
     <div class="container-fluid">
-        <h4>INCOMING ...</h4>
-        <hr>
-        <search-result 
+        <single-memorandum 
             v-for="result in results" :key="result.created"
             :creator="result.sender.get_full_name"
-            :subject="result.subject"
-            :brief="result.message"
+            :subject=truncate(result.subject)
+            :brief=truncate(result.message)
             :created="result.created"
             :id="result.id"
-            status="Incoming"/>
+            :status="result.memo_state"/>
     </div>
 </template>
 
 <script>
-import SearchResult from '~/components/memo/SearchResult';
+import SingleMemorandum from '~/components/memo/SingleMemorandum';
 
 export default {
-    data() {
-        return {
-            results: []
-        }
+    props: {
+        showMemoSubs: Boolean,
+        truncate: Function,
+        results: Array,
+        getMemorandums: Function
     },
-    methods: {
-        truncate(str, numberOfWords) {
-            return str.replace(/(<([^>]+)>)/ig,"").split(/\s+/).slice(0, numberOfWords).join(" ") + " ...";
-        }
-    },
-    mounted () {
-        this.$axios.$get('/memos/?mstate=incoming', { headers: this.$store.getters['authHeader'] })
-        .then(res => {
-            this.results = res
-            this.results.forEach(result => { 
-                result.message = this.truncate(result.message, 6)                
-            });
-            console.log('fetched incoming memos')
-        })
-        .catch(err => {
-            console.log(err)
-        })        
+    mounted () {           
+        this.$store.dispatch('memorandums/setMemoDetailView', false)
+        this.getMemorandums(event, { memo_state: 'INCOMING' })
     },
     components: {
-        SearchResult
+        SingleMemorandum
     }
 }
 </script>

@@ -7,7 +7,6 @@ from apps.accounts.models import *
 
 class Base(models.Model):
 	title = models.CharField(max_length = 50)
-	description = models.TextField(blank = True)
 	creator = models.ForeignKey('auth.User', on_delete = models.PROTECT)
 	created = models.DateTimeField(default = timezone.now)
 
@@ -15,7 +14,7 @@ class Base(models.Model):
 		abstract = True
 
 	def __str__(self):
-		return self.name
+		return self.title
 
 class Category(Base):
 
@@ -66,12 +65,9 @@ class Notice(Base):
 		default=NORMAL
 	)
 
-	description = models.TextField()
+	description = models.TextField(blank = False)
 	category = models.ForeignKey(Category, related_name ="%(class)s_categories", on_delete = models.PROTECT)
 	expiry = models.DateTimeField(default = timezone.now)
 		
-	# def get_absolute_url(self):
-	# 	return reverse('notices:notice-categories')
-	
 	class Meta:
 		ordering = ['-created']

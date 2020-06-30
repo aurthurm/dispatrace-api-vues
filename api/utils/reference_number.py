@@ -25,13 +25,13 @@ def get_ref_number(user):
         return JsonResponse(data)
 
     try:
-        d_code = profile.department.code
+        d_code = profile.department.abbreviation
     except ValueError:
         data['profile-complete'], data['profile-message'] = "no", "Profile Incomplete! Check Department Code"
         return JsonResponse(data)
 
     try:
-        o_code = profile.office.code
+        o_code = profile.office.abbreviation
     except ValueError:
         data['profile-complete'], data['profile-message'] = "no", "Profile Incomplete! Check Office Code"
         return JsonResponse(data)

@@ -1,5 +1,5 @@
 <template>        
-    <b-card bg-variant="light">
+    <b-card bg-variant="light" class="mb-5">
         <b-form  @submit.stop.prevent="onSubmit" @reset="onReset">
             <b-row>
                 <b-col>
@@ -101,9 +101,9 @@
                 </b-col>
             </b-row>
 
-            <b-card class="my-3" header="Form Data Result">
+            <!-- <b-card class="my-3" header="Form Data Result">
                 <pre class="m-0">{{ form }}</pre>
-            </b-card>
+            </b-card> -->
 
             <b-button type="submit" variant="primary">Submit</b-button>
             <slot></slot>

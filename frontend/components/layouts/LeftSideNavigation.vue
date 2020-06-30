@@ -1,7 +1,7 @@
 <template>
     <aside id="left-aside bg-dark">
         <nav id="sidebar">
-            <b-navbar-brand class=" pl-3 pt-2">Welcome @{{ loggedInUser }}</b-navbar-brand>
+            <b-navbar-brand class=" pl-3 pt-2">Smart Works</b-navbar-brand>
             <ul class="list-unstyled components  mt-1 pt-2">
                  <nuxt-link to="/" class="nav-item" tag="li">
                     <a class="nav-link">DASHBOARD</a>
@@ -34,6 +34,10 @@
                 <b-nav-item href="#">Link 2</b-nav-item> -->
             </ul>
         </nav>
+        <div class="bg-white mx-1 p-1 text-danger" v-if="showTimeLeft">
+            Your session will <br>Expire in {{ timeLeft.minutes }} minutes
+            <b-button variant="success" size="sm" @click="extendSession()">Extend Session</b-button>
+        </div>
     </aside>
 </template>
 
@@ -129,12 +133,27 @@ ul ul a {
 <script>
 import { mapGetters } from 'vuex';
 export default {
-    computed: {
-        ...mapGetters({
-            loggedInUser: 'loggedInUser'
-        })
+    data() {    
+        return {
+            showTimeLeft: false,
+            timeLeft: 0
+        }
     },
-    methods: {
+    methods: { 
+        checkSessionTimes() {            
+            this.$store.dispatch('checkTimeLeft')
+            .then( res => {
+                this.timeLeft = res
+                this.showTimeLeft = res.minutes < 10
+                if(res.minutes <= 0) this.$store.dispatch('logOut')
+            })
+        },
+        extendSession(){          
+            this.$store.dispatch('extendSession')
+            .then( res => {
+                console.log("Session extended ")
+            })
+        },
         dropToggle(e) {
             var allDropDowns = document.querySelectorAll("ul.collapse.list-unstyled");
             for(var i=0; i<=allDropDowns.length-1; i++) 
@@ -146,6 +165,18 @@ export default {
             }
             e.toElement.nextElementSibling.classList.toggle('show')
         }
+    },
+    computed: {        
+        ...mapGetters({
+            loggedInUser: 'loggedInUser'
+        })
+    },
+    mounted() {
+        setInterval(() => {            
+            if(this.$store.getters.isAuthenticated) {
+                this.checkSessionTimes()
+            }
+        }, 10000)
     }
 }
 </script>

@@ -20,7 +20,7 @@ export default {
       if (auth && auth.access) {
           return { Authorization: `Bearer  ${auth.access}` }
       } else {
-        return this.$router.push('/auth')
+        // return this.$router.push('/auth')
       }     
     },
 

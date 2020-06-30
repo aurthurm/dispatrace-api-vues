@@ -32,8 +32,8 @@ class Department(models.Model):
         max_length=255,
         default=''
     )
-    code = models.CharField(
-        _('code'),
+    abbreviation = models.CharField(
+        _('abbreviation'),
         max_length=3,
         default=''
     )
@@ -56,8 +56,8 @@ class Office(models.Model):
         max_length=255,
         default=''
     )
-    code = models.CharField(
-        _('code'),
+    abbreviation = models.CharField(
+        _('abbreviation'),
         max_length=3,
         default=''
     )
