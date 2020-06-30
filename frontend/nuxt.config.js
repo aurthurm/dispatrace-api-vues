@@ -97,5 +97,10 @@ export default {
    */
   router: {
     middleware: ['persist-auth']
-  }
+  },
+
+  publicPath: process.env.NODE_ENV === 'production' ? '/'  : './'
+
+
 }
+
