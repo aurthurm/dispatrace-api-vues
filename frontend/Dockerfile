@@ -1,10 +1,10 @@
-
 FROM node:latest
-WORKDIR ./frontend/
+ENV HOST 0.0.0.0
+RUN mkdir /frontend
+WORKDIR /frontend
 # Install dependencies
 # COPY package.json yarn.lock /app/
 # RUN npm install
 # Add rest of the client code
 COPY . /frontend/
 EXPOSE 3000
-CMD npm dev

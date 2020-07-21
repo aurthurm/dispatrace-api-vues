@@ -1,12 +1,17 @@
 var jwt = require('jsonwebtoken');
 
 export default {
+
+    resetState ({ commit }) {
+      commit('resetState')
+    },
+    
     logIn({ commit }, userData) {
         return this.$axios.$post('token/extras/', userData) 
         .then(res => {
             // check if data exists :: to do
             commit('setAuth', res)                    
-            localStorage.setItem('auth', JSON.stringify(res));
+            localStorage.setItem('auth', JSON.stringify(res));  
             return res
         })
         .catch(err => err)
@@ -25,12 +30,15 @@ export default {
     },
 
     logOut ({ commit }) {
+        // commit('memorandums/resetMemorandumState')
+        // commit('notices/resetNoticesState')
+        // commit('resetState')
         commit('logOut')
     },
 
     persistAuth({ commit }) {
         let auth = JSON.parse(localStorage.getItem('auth'))
-        if (!auth) {
+        if (auth === null) {
            return;
         } else {
 

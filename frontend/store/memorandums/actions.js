@@ -1,5 +1,9 @@
 export default {
 
+    resetMemorandumState ({ commit }) {
+      commit('resetMemorandumState')
+    },
+
     async createMemorandum({}, data) {   
       console.log("form", data)   
       await this.$axios.$post('/memos/', { form_data: data }, { headers: this.getters['authHeader'] })

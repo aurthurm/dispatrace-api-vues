@@ -1,4 +1,14 @@
+import { initialState } from "./initial_state.js";
+
 export default {
+    resetState (state) {
+        // Object.assign(state, initialState)
+        let new_state = initialState();
+        Object.keys(state).forEach(key => {
+            Object.assign(state[key], new_state[key])
+        })
+    },
+
     setAuth (state, auth) {
         state.auth.token = auth.access
         state.auth.refresh = auth.refresh
@@ -7,12 +17,16 @@ export default {
     },
 
     logOut (state) {
-        state.auth.token = null
-        state.auth.refresh = null
-        state.auth.user = ''
+        // localStorage.removeItem('auth'); 
+        localStorage.clear();
+        state.auth.token = ""
+        state.auth.refresh = ""
+        state.auth.user = {
+            "username": "",
+            "user_id": ""
+        }
         state.auth.loggedIn = false
-        state. timeLeft = { hours: 0, minutes: 0 }
-        localStorage.removeItem('auth'); 
+        this.$router.go(this.$router.currentRoute);
         return this.$router.push('/auth')
     }, 
 

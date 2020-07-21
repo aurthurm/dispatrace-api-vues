@@ -27,6 +27,11 @@ export default {
             }
         }
     },
+    created() {
+        this.$store.dispatch('resetState')
+        this.$store.dispatch('notices/resetNoticesState')
+        this.$store.dispatch('memorandums/resetMemorandumState')
+    },
     methods: {
         authHandle() {
             var data = {}
