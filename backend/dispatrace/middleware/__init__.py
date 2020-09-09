@@ -1,1 +1,1 @@
-from .corsMiddleware import CORSMiddleware
+from .corsMiddleware import CORSMiddleware, CustomWhiteNoiseMiddleware

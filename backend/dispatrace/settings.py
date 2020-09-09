@@ -67,6 +67,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'dispatrace.middleware.CORSMiddleware'
+    'dispatrace.middleware.CustomWhiteNoiseMiddleware'
 ]
 
 ROOT_URLCONF = 'dispatrace.urls'
@@ -150,12 +151,14 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/_nuxt/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
    os.path.join(BASE_DIR, 'frontend/dist/_nuxt'),
 ]
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+
 
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
@@ -216,3 +219,13 @@ try:
     del DATABASES['default']['OPTIONS']['sslmode']
 except Exception as e:
     pass
+
+
+WHITENOISE_INDEX_FILE = True
+
+ROOT_DIR = os.path.dirname(BASE_DIR)
+
+STATIC_ROOT = ROOT_DIR / "frontend" / "dist"
+if not STATIC_ROOT.exists():
+    import warnings
+    warnings.warn(f"{STATIC_ROOT} does NOT exist. Might cause problems with Whitenoise")
