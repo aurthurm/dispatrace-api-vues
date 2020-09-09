@@ -1,8 +1,8 @@
 echo "Running Django Migrations ...";
 
-python backend/manage.py makemigrations
+python /app/backend/manage.py makemigrations
 
-until python manage.py migrate; do
+until python /app/backend/manage.py migrate; do
   sleep 2
   echo "Retrying to migrate db ... ";
 done
