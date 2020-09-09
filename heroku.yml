@@ -1,4 +1,4 @@
 build:
     docker:
-      web: ./frontend/Dockerfile.web
-      django: ./backend/Dockerfile.django
+      web: frontend/Dockerfile.web
+      django: backend/Dockerfile.django
