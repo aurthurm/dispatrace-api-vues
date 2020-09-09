@@ -22,7 +22,7 @@ RUN chmod +x /app/backend/startup.sh
 USER app
 
 ENV PORT=8000
-EXPOSE 8000
+EXPOSE $PORT
 
-CMD python backend/manage.py runserver 0.0.0.0:8000
+CMD python backend/manage.py runserver 0.0.0.0:$PORT
 #
