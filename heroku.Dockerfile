@@ -24,4 +24,4 @@ USER app
 ENV PORT=8000
 EXPOSE $PORT
 
-CMD gunicorn backend/dispatrace.wsgi:application --host 0.0.0.0 --port $PORT
+CMD python backend/manage.py 0.0.0.0:$PORT

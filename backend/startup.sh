@@ -7,6 +7,6 @@ until python /app/backend/manage.py migrate; do
   echo "Retrying to migrate db ... ";
 done
 
-python /app/backend/manage.py shell < init_admin.py
+python /app/backend/manage.py shell < /app/backend/init_admin.py
 
 echo "Django App is ready ....";
