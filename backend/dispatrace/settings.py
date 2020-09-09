@@ -226,6 +226,6 @@ WHITENOISE_INDEX_FILE = True
 ROOT_DIR = os.path.dirname(BASE_DIR)
 
 STATIC_ROOT = os.path.join(ROOT_DIR, "frontend/dist")
-if not STATIC_ROOT.exists():
+if not STATIC_ROOT:
     import warnings
     warnings.warn(f"{STATIC_ROOT} does NOT exist. Might cause problems with Whitenoise")
