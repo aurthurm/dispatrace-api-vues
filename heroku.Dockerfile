@@ -24,4 +24,4 @@ USER app
 ENV PORT=8000
 EXPOSE 8000
 
-CMD yarn start frontend/
+CMD python backend/manage.py runserver 0.0.0.0:8000
