@@ -4,15 +4,14 @@ python manage.py makemigrations
 
 until python manage.py migrate; do
   sleep 2
-  echo "Retrying ....";
+  echo "Retrying to migrate db ... ";
 done
 
 python manage.py shell < init_admin.py
 
-python manage.py makemigrations
-python manage.py migrate
+python manage.py collectstatic --noinput
 
-echo "Django is ready ....";
+echo "Django App is ready ....";
 
-python manage.py runserver 0.0.0.0:8000
+# python manage.py runserver 0.0.0.0:8000
 

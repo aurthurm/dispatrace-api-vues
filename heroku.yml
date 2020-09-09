@@ -1,4 +1,12 @@
+setup:
+  addons:
+  - plan: heroku-postgresql
+
 build:
     docker:
-      web: frontend/Dockerfile.web
-      django: backend/Dockerfile.django
+      web: ./heroku.Dockerfile
+
+release:
+  image: web
+  command:
+      - ./backend/startup.sh
