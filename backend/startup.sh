@@ -1,17 +1,12 @@
-#!/usr/bin/env python3
+echo "Running Django Migrations ...";
 
-python manage.py makemigrations
+python ./manage.py makemigrations
 
-until python manage.py migrate; do
+until python ./manage.py migrate; do
   sleep 2
   echo "Retrying to migrate db ... ";
 done
 
-python manage.py shell < init_admin.py
-
-python manage.py collectstatic --noinput
+python ./manage.py shell < init_admin.py
 
 echo "Django App is ready ....";
-
-# python manage.py runserver 0.0.0.0:8000
-
