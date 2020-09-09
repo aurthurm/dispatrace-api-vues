@@ -17,7 +17,10 @@ RUN pip install --upgrade --no-cache-dir -r backend/requirements.txt
 
 COPY . /app
 COPY --from=frontend /app/frontend/dist /app/frontend/dist
-RUN chmod +x /app/backend/startup.sh
+# RUN chmod +x /app/backend/startup.sh
+RUN python /app/backend/manage.py makemigrations &&\
+    python /app/backend/manage.py migrate &&\
+    python /app/backend/manage.py shell < /app/backend/init_admin.py
 
 USER app
 
