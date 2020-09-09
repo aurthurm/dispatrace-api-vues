@@ -14,9 +14,9 @@ RUN apt-get update && \
     build-essential libpq-dev
 COPY ./backend/requirements.txt /app/backend/requirements.txt
 RUN pip install --upgrade --no-cache-dir -r backend/requirements.txt
-COPY ./backend /app/backend
 
-COPY --from=frontend /app/frontend/build /app/frontend/build
+COPY . /app
+COPY --from=frontend /app/frontend/dist /app/frontend/dist
 
 USER app
 
