@@ -11,7 +11,7 @@ RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
     gcc apt-transport-https python-dev \
-    build-essential
+    build-essential libpq-dev
 COPY ./backend/requirements.txt /app/backend/requirements.txt
 RUN pip install --upgrade --no-cache-dir -r backend/requirements.txt
 COPY ./backend /app/backend
