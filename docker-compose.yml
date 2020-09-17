@@ -1,44 +1,93 @@
-version: '3'    
+version: '3.2'
+
 services:
-  # db:
-  #   image: postgres
-  #   restart: always
-  #   environment:
-  #     - POSTGRES_DB=postgres
-  #     - POSTGRES_USER=postgres
-  #     - POSTGRES_PASSWORD=postgres
-  #  env_file: ./postgres/postgres.env
-    # build:
-    #   context: ./postgres
-    #   dockerfile: Dockerfile
-    # ports:
-    #   - "5432:5432"     
-  nuxt:
+
+  nuxt_fe:
+    container_name: smartworks_fe
     build:
-        context: ./frontend
-    command: bash -c "npm run start"
+      context: ./frontend
+      dockerfile: Dockerfile
     volumes:
-      - ./frontend:/frontend
+      - ./frontend/nuxt:/frontend
     expose:
-        - "3000"
+      - "80"
     ports:
-        - "3000:3000"
+      - "80:3000"
     depends_on:
-        - django 
-  django:
+      - django_be
+    command: bash -c "npm run start"
+
+  django_be:
+    container_name: smartworks_be
     restart: always
     build: 
       context: ./backend
       dockerfile: Dockerfile
-    # command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - ./backend:/backend
-    # env_file: ./backend/django.env
-    # links:
-    #   - db
     # depends_on:
-    #   - db
+    #   - postgres_db
+    networks: 
+      - smartworksnet
     ports:
       - "8000:8000"
     expose:
       - '8000'
+    command: bash -c "python ./django/manage.py migrate && python ./django/manage.py runserver 0.0.0.0:8000"
+
+  # postgres_db:
+  #   container_name: smartworks_db
+  #   image: postgres:12
+  #   restart: always
+  #   volumes:
+  #     - ./postgres/init/:/docker-entrypoint-initdb.d/
+  #     - db-data:/var/lib/postgresql/data
+  #   environment:
+  #     - POSTGRES_DB=smartworks_db
+  #     - POSTGRES_USER=smartworks_admin
+  #     - POSTGRES_PASSWORD=SmartWorks1234
+  #     - POSTGRES_HOST_AUTH_METHOD=trust
+  #   ports:
+  #     - "5432:5432"  
+  #   networks: 
+  #     - smartworksnet
+
+  # pgadmin:
+  #   container_name: smartworks_pgadmin
+  #   image: dpage/pgadmin4
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@pgadmin.org}
+  #     PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+  #   volumes:
+  #     - pgadmin:/root/.pgadmin
+  #   ports:
+  #     - "${PGADMIN_PORT:-5050}:80"
+  #   networks:
+  #     - smartworksnet
+  #   restart: unless-stopped
+  #   depends_on:
+  #       - postgres_db
+
+  # nginx:
+  #   container_name: smartworks_nginx
+  #   image: nginx:latest
+  #   volumes:
+  #     - ./nginx:/etc/nginx/conf.d
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   depends_on:
+  #     - nuxt_fe
+  #   links: 
+  #     - nuxt_fe:nuxt_fe
+  #     - django_be:django_be
+  #   networks: 
+  #     - smartworksnet
+      
+volumes: 
+  pgadmin:
+  db-data:
+
+networks:
+  smartworksnet:
+    driver: bridge

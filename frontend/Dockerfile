@@ -6,5 +6,8 @@ WORKDIR /frontend
 # COPY package.json yarn.lock /app/
 # RUN npm install
 # Add rest of the client code
-COPY . /frontend/
+# COPY . /frontend
+COPY ./nuxt/dist /frontend/nuxt
+COPY ./nuxt/package.json /frontend/nuxt
+COPY ./nuxt/yarn.lock /frontend/nuxt
 EXPOSE 3000
