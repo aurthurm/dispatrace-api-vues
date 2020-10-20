@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 import os
 from django.db import models
 from datetime import timedelta
+import django_heroku 
+import dj_database_url
 
 def get_from_env(name, default):
     if name in os.environ:
@@ -98,16 +100,16 @@ WSGI_APPLICATION = 'dispatrace.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
-DATABASES = {   #TODO:  Use env to get these from environ
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'smartworks_db',
-        'USER': 'smartworks_admin',
-        'PASSWORD': 'SmartWorks1234',
-        'HOST': 'postgres_db',
-        'PORT': 5432,
-    }
-}
+# DATABASES = {   #TODO:  Use env to get these from environ
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#         'NAME': 'smartworks_db',
+#         'USER': 'smartworks_admin',
+#         'PASSWORD': 'SmartWorks1234',
+#         'HOST': 'postgres_db',
+#         'PORT': 5432,
+#     }
+# }
 
 # DATABASES = {
 #     'default': {
@@ -210,3 +212,15 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_LIFETIME': timedelta(minutes=60),
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
+
+
+# Heroku Settings
+
+DATABASES = {}
+DATABASES['default'] = dj_database_url.config(conn_max_age=600)
+
+django_heroku.settings(locals())
+try:
+    del DATABASES['default']['OPTIONS']['sslmode']
+except Exception as e:
+    pass

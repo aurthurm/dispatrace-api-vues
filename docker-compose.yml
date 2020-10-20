@@ -38,38 +38,38 @@ services:
       - '8000'
     command: bash -c "python ./django/manage.py migrate && python ./django/manage.py runserver 0.0.0.0:8000"
 
-  postgres_db:
-    container_name: smartworks_db
-    image: postgres:12
-    restart: always
-    volumes:
-      - ./postgres/init/:/docker-entrypoint-initdb.d/
-      - db-data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=smartworks_db
-      - POSTGRES_USER=smartworks_admin
-      - POSTGRES_PASSWORD=SmartWorks1234
-      - POSTGRES_HOST_AUTH_METHOD=trust
-    ports:
-      - "5432:5432"  
-    networks: 
-      - smartworksnet
+  # postgres_db:
+  #   container_name: smartworks_db
+  #   image: postgres:12
+  #   restart: always
+  #   volumes:
+  #     - ./postgres/init/:/docker-entrypoint-initdb.d/
+  #     - db-data:/var/lib/postgresql/data
+  #   environment:
+  #     - POSTGRES_DB=smartworks_db
+  #     - POSTGRES_USER=smartworks_admin
+  #     - POSTGRES_PASSWORD=SmartWorks1234
+  #     - POSTGRES_HOST_AUTH_METHOD=trust
+  #   ports:
+  #     - "5432:5432"  
+  #   networks: 
+  #     - smartworksnet
 
-  pgadmin:
-    container_name: smartworks_pgadmin
-    image: dpage/pgadmin4
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@pgadmin.org}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
-    volumes:
-      - pgadmin:/root/.pgadmin
-    ports:
-      - "${PGADMIN_PORT:-5050}:80"
-    networks:
-      - smartworksnet
-    restart: unless-stopped
-    depends_on:
-        - postgres_db
+  # pgadmin:
+  #   container_name: smartworks_pgadmin
+  #   image: dpage/pgadmin4
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@pgadmin.org}
+  #     PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+  #   volumes:
+  #     - pgadmin:/root/.pgadmin
+  #   ports:
+  #     - "${PGADMIN_PORT:-5050}:80"
+  #   networks:
+  #     - smartworksnet
+  #   restart: unless-stopped
+  #   depends_on:
+  #       - postgres_db
 
   # nginx:
   #   container_name: smartworks_nginx
