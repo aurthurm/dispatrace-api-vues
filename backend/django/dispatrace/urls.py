@@ -14,12 +14,12 @@ admin.autodiscover()
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls', namespace="dispatrace-api")),
-    # re_path('^.*$', IndexView, name="index"),
+    re_path('^.*$', IndexView, name="index"),
 ]
 
-# if settings.DEBUG:
-#     urlpatterns += [
-#         re_path(r'^_nuxt/(?P<path>.*)$', serve, {
-#             'document_root': settings.STATIC_ROOT,
-#         }),
-#     ]
+if settings.DEBUG:
+    urlpatterns += [
+        re_path(r'^_nuxt/(?P<path>.*)$', serve, {
+            'document_root': settings.STATIC_ROOT,
+        }),
+    ]
