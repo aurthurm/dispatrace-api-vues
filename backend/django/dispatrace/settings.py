@@ -104,7 +104,7 @@ DATABASES = {   #TODO:  Use env to get these from environ
         'NAME': 'smartworks_db',
         'USER': 'smartworks_admin',
         'PASSWORD': 'SmartWorks1234',
-        'HOST': 'smartworks_db',
+        'HOST': 'postgres_db',
         'PORT': 5432,
     }
 }
