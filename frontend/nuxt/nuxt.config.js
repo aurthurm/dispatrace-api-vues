@@ -81,7 +81,7 @@ export default {
    ** See https://axios.nuxtjs.org/options
    */
   axios: {
-    baseURL: 'http://localhost:8000/api'
+    baseURL: 'http://django_be:8000/api'
   },
   /*
    ** Build configuration
@@ -99,7 +99,16 @@ export default {
     middleware: ['persist-auth']
   },
 
-  publicPath: process.env.NODE_ENV === 'production' ? '/'  : './'
+  publicPath: process.env.NODE_ENV === 'production' ? '/'  : './',
+
+  /*
+   ** Server configuration
+   */
+
+  //  server: {
+  //   port: 3000,
+  //   host: '0.0.0.0', // default: localhost
+  //  }
 
 
 }

@@ -14,7 +14,6 @@ admin.autodiscover()
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls', namespace="dispatrace-api")),
-    # path('api/', include('api.urls', namespace="dispatrace-api")),
     # re_path('^.*$', IndexView, name="index"),
 ]
 
