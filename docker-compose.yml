@@ -26,9 +26,6 @@ services:
     build: 
       context: ./backend
       dockerfile: Dockerfile
-    environment:
-      - DATABASE_URL=postgres://tedosnrvnhowpt:bdc572446330120fc5b82801f811f47ad85d10d9dcf2bb7cda2600061fbd6eca@ec2-54-157-4-216.compute-1.amazonaws.com:5432/dbussbk80r9o56
-      - ENGINE=django.db.backends.postgresql_psycopg2
     volumes:
       - ./backend:/backend
     # depends_on:

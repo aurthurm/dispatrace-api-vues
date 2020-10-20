@@ -215,15 +215,13 @@ SIMPLE_JWT = {
 
 
 # Heroku Settings
-DATABASES = {   #TODO:  Use env to get these from environ
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-    }
-}
-# DATABASES = {}
-# DATABASES['default'] = dj_database_url.config(conn_max_age=600)
-db_from_env = dj_database_url.config(conn_max_age=500)
-DATABASES['default'].update(db_from_env)
+DATABASES = {}
+DATABASES['default'] = dj_database_url.config(
+    default='postgres://tedosnrvnhowpt:bdc572446330120fc5b82801f811f47ad85d10d9dcf2bb7cda2600061fbd6eca@ec2-54-157-4-216.compute-1.amazonaws.com:5432/dbussbk80r9o56',
+    conn_max_age=500
+)
+# db_from_env = dj_database_url.config(conn_max_age=500)
+# DATABASES['default'].update(db_from_env)
 
 django_heroku.settings(locals())
 try:
