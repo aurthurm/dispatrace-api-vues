@@ -26,6 +26,8 @@ services:
     build: 
       context: ./backend
       dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=postgres://tedosnrvnhowpt:bdc572446330120fc5b82801f811f47ad85d10d9dcf2bb7cda2600061fbd6eca@ec2-54-157-4-216.compute-1.amazonaws.com:5432/dbussbk80r9o56
     volumes:
       - ./backend:/backend
     # depends_on:
@@ -70,22 +72,6 @@ services:
   #   restart: unless-stopped
   #   depends_on:
   #       - postgres_db
-
-  # nginx:
-  #   container_name: smartworks_nginx
-  #   image: nginx:latest
-  #   volumes:
-  #     - ./nginx:/etc/nginx/conf.d
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   depends_on:
-  #     - nuxt_fe
-  #   links: 
-  #     - nuxt_fe:nuxt_fe
-  #     - django_be:django_be
-  #   networks: 
-  #     - smartworksnet
       
 volumes: 
   pgadmin:
@@ -94,3 +80,8 @@ volumes:
 networks:
   smartworksnet:
     driver: bridge
+
+
+
+
+    
